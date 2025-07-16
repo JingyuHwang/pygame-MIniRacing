@@ -160,7 +160,7 @@ def show_score(score):
     text = font.render(f"Score: {score}", True, (255, 255, 255))
     screen.blit(text, (10, 10))
 
-def main():
+def main(skip_demo=False):
     global player_x, score, background_y, ball_speed, background_speed, speed_increase_timer, balls
     # 속도 회복 관련 변수
     speed_recovering = False
@@ -169,81 +169,86 @@ def main():
     target_ball_speed = ball_speed
     target_background_speed = background_speed
 
-    # --- 데모 모드(5초) ---
-    demo_duration = 5000  # 5초 (ms)
-    demo_start_time = pygame.time.get_ticks()
-    demo_player_x = player_x
-    demo_direction = 1  # 1: 오른쪽, -1: 왼쪽
-    demo_background_y = background_y
-    r_key_count = 0
-    r_key_last_time = 0
-    reset_message_time = 0
-    reset_message_show = False
-    while pygame.time.get_ticks() - demo_start_time < demo_duration:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_r:
-                    now = pygame.time.get_ticks()
-                    # 1초 이내 연속 입력만 인정
-                    if now - r_key_last_time < 1000:
-                        r_key_count += 1
-                    else:
-                        r_key_count = 1
-                    r_key_last_time = now
-                    if r_key_count == 3:
-                        # Top3 기록 리셋
-                        save_high_scores([("---", 0), ("---", 0), ("---", 0)])
-                        reset_message_time = now
-                        reset_message_show = True
-                        r_key_count = 0
-        # player 자동 좌우 이동
-        demo_player_x += demo_direction * 4
-        if demo_player_x > SCREEN_WIDTH - player_width - 80:
-            demo_direction = -1
-        if demo_player_x < 80:
-            demo_direction = 1
-        # 공 자동 이동
-        for ball in balls:
-            ball['y'] += ball['speed']
-            if ball['y'] > SCREEN_HEIGHT:
-                ball['y'] = random.randint(-200, -100)
-                ball['x'] = random.randint(80, SCREEN_WIDTH - ball_width - 80)
-        # 배경 이동
-        demo_background_y = (demo_background_y + background_speed) % SCREEN_HEIGHT
-        # 화면 그리기
-        screen.blit(background_image, (0, demo_background_y))
-        screen.blit(background_image, (0, demo_background_y - SCREEN_HEIGHT))
-        draw_player(demo_player_x, player_y)
-        for ball in balls:
-            draw_ball(ball)
-        # Top3 점수 표시
-        high_scores = load_high_scores()
-        # high_score_font = pygame.font.Font(FONT_PATH, 28) # 21
-        high_score_text1 = font.render(f"1st: {high_scores[0][0]} {high_scores[0][1]}", True, (255, 215, 0)) # 21
-        high_score_text2 = font.render(f"2nd: {high_scores[1][0]} {high_scores[1][1]}", True, (192, 192, 192)) # 21
-        high_score_text3 = font.render(f"3rd: {high_scores[2][0]} {high_scores[2][1]}", True, (205, 127, 50)) # 21
-        screen.blit(high_score_text1, (10, 50))
-        screen.blit(high_score_text2, (10, 80))
-        screen.blit(high_score_text3, (10, 110))
-        # demo_text = high_score_font.render("Demo Mode", True, (0, 255, 255)) # 21
-        demo_text = font.render("Demo Mode", True, (0, 255, 255)) # 21
-        screen.blit(demo_text, (SCREEN_WIDTH//2 - demo_text.get_width()//2, 20))
-        
-        # 방향키 안내 텍스트 추가
-        controls_text = font.render("Left ← → Right", True, (255, 255, 255))
-        screen.blit(controls_text, (SCREEN_WIDTH//2 - controls_text.get_width()//2, SCREEN_HEIGHT - 40))
-        
-        if reset_message_show:
-            # msg_font = pygame.font.Font(FONT_PATH, 36) # 27
-            msg = font.render("Top3 기록이 리셋되었습니다!", True, (255, 0, 0)) # 27
-            screen.blit(msg, (SCREEN_WIDTH//2 - msg.get_width()//2, SCREEN_HEIGHT//2 - 100))
-            if pygame.time.get_ticks() - reset_message_time > 1000:
-                reset_message_show = False
-        pygame.display.flip()
-        clock.tick(60)
+    if not skip_demo:
+        # --- 데모 모드(스페이스 입력 시까지) ---
+        demo_player_x = player_x
+        demo_direction = 1  # 1: 오른쪽, -1: 왼쪽
+        demo_background_y = background_y
+        r_key_count = 0
+        r_key_last_time = 0
+        reset_message_time = 0
+        reset_message_show = False
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        # 스페이스 입력 시 데모 모드 종료
+                        break
+                    if event.key == pygame.K_r:
+                        now = pygame.time.get_ticks()
+                        # 1초 이내 연속 입력만 인정
+                        if now - r_key_last_time < 1000:
+                            r_key_count += 1
+                        else:
+                            r_key_count = 1
+                        r_key_last_time = now
+                        if r_key_count == 3:
+                            # Top3 기록 리셋
+                            save_high_scores([("---", 0), ("---", 0), ("---", 0)])
+                            reset_message_time = now
+                            reset_message_show = True
+                            r_key_count = 0
+            else:
+                # for-else: break가 호출되지 않으면 계속 진행
+                # player 자동 좌우 이동
+                demo_player_x += demo_direction * 4
+                if demo_player_x > SCREEN_WIDTH - player_width - 80:
+                    demo_direction = -1
+                if demo_player_x < 80:
+                    demo_direction = 1
+                # 공 자동 이동
+                for ball in balls:
+                    ball['y'] += ball['speed']
+                    if ball['y'] > SCREEN_HEIGHT:
+                        ball['y'] = random.randint(-200, -100)
+                        ball['x'] = random.randint(80, SCREEN_WIDTH - ball_width - 80)
+                # 배경 이동
+                demo_background_y = (demo_background_y + background_speed) % SCREEN_HEIGHT
+                # 화면 그리기
+                screen.blit(background_image, (0, demo_background_y))
+                screen.blit(background_image, (0, demo_background_y - SCREEN_HEIGHT))
+                draw_player(demo_player_x, player_y)
+                for ball in balls:
+                    draw_ball(ball)
+                # Top3 점수 표시
+                high_scores = load_high_scores()
+                high_score_text1 = font.render(f"1st: {high_scores[0][0]} {high_scores[0][1]}", True, (255, 215, 0)) # 21
+                high_score_text2 = font.render(f"2nd: {high_scores[1][0]} {high_scores[1][1]}", True, (192, 192, 192)) # 21
+                high_score_text3 = font.render(f"3rd: {high_scores[2][0]} {high_scores[2][1]}", True, (205, 127, 50)) # 21
+                screen.blit(high_score_text1, (10, 50))
+                screen.blit(high_score_text2, (10, 80))
+                screen.blit(high_score_text3, (10, 110))
+                demo_text = font.render("Demo Mode", True, (0, 255, 255)) # 21
+                screen.blit(demo_text, (SCREEN_WIDTH//2 - demo_text.get_width()//2, 20))
+                # 방향키 안내 텍스트 추가
+                controls_text = font.render("Left ← → Right", True, (255, 255, 255))
+                screen.blit(controls_text, (SCREEN_WIDTH//2 - controls_text.get_width()//2, SCREEN_HEIGHT - 40))
+                # 스페이스로 시작 안내 추가
+                start_text = font.render("Press SPACE to Start", True, (255, 255, 0))
+                screen.blit(start_text, (SCREEN_WIDTH//2 - start_text.get_width()//2, SCREEN_HEIGHT - 80))
+                if reset_message_show:
+                    msg = font.render("Top3 기록이 리셋되었습니다!", True, (255, 0, 0)) # 27
+                    screen.blit(msg, (SCREEN_WIDTH//2 - msg.get_width()//2, SCREEN_HEIGHT//2 - 100))
+                    if pygame.time.get_ticks() - reset_message_time > 1000:
+                        reset_message_show = False
+                pygame.display.flip()
+                clock.tick(60)
+                continue
+            # for-else의 break로 여기 도달: 데모 모드 종료
+            break
 
     # 데모 후 player, ball, 배경 위치 초기화
     player_x = (SCREEN_WIDTH - player_width) // 2
@@ -500,12 +505,13 @@ def main():
                         }
                         balls.append(ball)
                     score = 0
-                    main()  # 게임 재시작
+                    main(skip_demo=True)  # 데모 모드 건너뛰고 카운트다운부터 시작
                     return
         # 5초가 지나면 자동으로 데모 모드로 이동
         if pygame.time.get_ticks() - end_screen_start_time > 5000:
             waiting_for_input = False
-            break
+            main()  # 데모 모드로 진입
+            return
         # 게임 종료 화면 그리기
         screen.fill((0, 0, 0))
         
