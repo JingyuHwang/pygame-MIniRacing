@@ -471,6 +471,7 @@ def main():
     
     # 게임 종료 화면 (Goal 또는 Game Over)
     waiting_for_input = True
+    end_screen_start_time = pygame.time.get_ticks()  # 종료 화면 진입 시간 저장
     while waiting_for_input:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -501,7 +502,10 @@ def main():
                     score = 0
                     main()  # 게임 재시작
                     return
-        
+        # 5초가 지나면 자동으로 데모 모드로 이동
+        if pygame.time.get_ticks() - end_screen_start_time > 5000:
+            waiting_for_input = False
+            break
         # 게임 종료 화면 그리기
         screen.fill((0, 0, 0))
         
